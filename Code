@@ -1,0 +1,702 @@
+/***** Program Name: SAS Studio*********************
+********Programmers Name: Jesse David Lafarga *****
+********Creation Date: Jan 10th, 2023**********
+********Purpose: Duplicate Table #1******/
+Options pageno=1;
+Options Formdlim="-";
+Title1 "207";
+Options Fmtsearch=(folder);
+Libname Folder "/home/u59586996/Jesse/Epi 207";
+Data Folder.adult1;
+Set Folder.adult;
+Keep PUF_ID AD38W AD41W AE27 AE25 AE3 AC11 AC12 AC41 AC36 AC13 AC14 AC31 
+     SRH SRAGE_P AK22_P AHEDUC MARIT AB1 AE15 LANGHOME INTVLANG AH37
+     AH33NEW YRUS CITIZEN2 SRSEX AB22 AD13 SMOKING SMKCUR MARIT2 rakedw0 rakedw1-rakedw80 HHSIZE_P SPK_ENG;
+Run;
+Proc Format;
+Value wlkfmt    1 = "0–2 times/week"
+                2 = "3–5 times/week"
+                3 = ">=6 times/week";
+Value mvpafmt   1 = "0 days/week"
+                2 = "1-3 days/week"
+	            3 = ">=4 days/week";
+Value fpfmt     1 = "0 times/month"
+                2 = "1–3 times/month"
+                3 = ">=4 times/month";
+Value ssbfmt    1 = "0-4 times/month"
+                2 = "5-30 times/month"
+                3 = ">=31 times/month";
+Value dstfmt    1 = "0-4 times/month"
+                2 = "5–13 times/month"
+                3 = ">=14 times/month";
+Value fffmt     1 = "0 times/month"
+                2 = "4-7 times/month"
+                3 = ">=8 times/month";        
+Value agefmt    1 = "18–34 years"
+                2 = "35–49 years"
+                3 = "50–64 years"
+                4 = ">=65 years";
+Value SRHfmt    1 = "Yes"
+                2 = "No";    
+Value MARIT3F   1 = "Married"
+                2 = "Formerly Married"
+                3 = "Never Married";
+Value AB1fmt    1 = "Excellent"
+                2 = "Very Good"
+                3 = "Good"
+                4 = "Fair"
+                5 = "Poor";
+Value AE15fmt   1 = 'Yes'
+                2 = 'No';
+Value Edufmt    1 = ">=College"
+                2 = "Some College"
+                3 = "High School"
+                4 = "< High School";
+Value SMKCURfmt 1 = "Yes"
+                2 = "No";
+Value SRHfmt    1 = "Yes Latino/hispanic"
+                2 = "No Latino/hispanic";
+Value fpl_cfmt  1 = "<=100%"
+                2 = "101–200%"
+			    3 = "201–300%"
+			    4 = ">300%";
+Value LANGHFMT  1 = "ENGLISH"
+                2 = "SPANISH"
+                3 = "CHINESE"
+                4 = "VIETNAMESE"
+                5 = "KOREAN"
+                6 = "OTHER ASIAN LANGUAGE (1 ONLY)"
+                7 = "OTHER NON-ASIAN LANGUAGE (1 ONLY) "
+                8 = "ENGLISH & SPANISH "
+                9 = "ENGLISH & CHINESE"
+               10 = "ENGLISH & EUROPEAN LANGUAGE "
+               11 = "ENGLISH & ANOTHER ASIAN LANGUAGE"
+               12 = "ENGLISH & ONE OTHER LANGUAGE"
+               13 = "OTHER LANGUAGES (2+)";
+Value INTVLfmt  1 = "ENGLISH"
+                2 = "SPANISH"
+                3 = "VIETNAMESE"
+                4 = "KOREAN"
+                5 = "CANTONESE"
+                6 = "MANDARIN";
+Value AH37fmt  -1 = "INAPPLICABLE"
+                1 = "VERY WELL"
+                2 = "WELL"
+                3 = "NOT WELL"
+                4 = "NOT AT ALL";              
+Value AH33fmt   1 = "BORN IN U.S."
+                2 = "BORN OUTSIDE U.S.";
+Value YRUSfmt  -1 = "INAPPLICABLE"
+                1 = "<=1 YEAR"
+                2 = "2-4 YEARS"
+                3 = "5-9 YEARS"
+                4 = "10-14 YEARS"
+                5 = "15+ YEARS";
+Value CITIZfmt  1 = "US-BORN CITIZEN"
+                2 = "NATURALIZED CITIZEN"
+                3 = "NON-CITIZEN"; 
+Run;
+
+/*Exclusion Criteria: women without DM and are not currently pregnant*/
+Proc Freq Data=Folder.adult1;
+Tables AB22 AD13 SRSEX;
+Format AB22 AB22X. AD13 YESNO. SRSEX SRSEX.;
+Run;
+Data Folder.adult1;
+Set Folder.adult1;
+If AB22^=1 and AD13^=1 and SRSEX=2;
+Run;
+/*N included=25,433*/
+
+/*Outcome variables: Walking, MVPA, Fried potatoes, SSB, Desserts, Fast food*/
+Data Folder.adult1;
+Set Folder.adult1;
+
+wlk=.;
+If 0<(AD38W+AD41W)<=2  Then wlk=1;
+If 3<=(AD38W+AD41W)<=5 Then wlk=2;
+If (AD38W+AD41W)>=6    Then wlk=3;
+
+mvpa=.;
+If (AE27+AE25)=0     Then mvpa=1;
+If 1<=(AE27+AE25)<=3 Then mvpa=2;
+If (AE27+AE25)>=4    Then mvpa=3;
+
+fp=.;
+If AE3=0     Then fp=1;
+If 1<=AE3<=3 Then fp=2;
+If AE3>=4    Then fp=3;
+
+ssb=.;
+If 0<=(AC11+AC12+AC41+AC36)<=4  Then ssb=1;
+If 5<=(AC11+AC12+AC41+AC36)<=30 Then ssb=2;
+If (AC11+AC12+AC41+AC36)>=31    Then ssb=3;
+
+dst=.;
+If 0<=(AC13+AC14)<=4   Then dst=1;
+If 5<=(AC13+AC14)<=13  Then dst=2;
+If (AC13+AC14)>=14     Then dst=3;
+
+ff=.;
+AC31m=AC31*4.3;
+If AC31m=0     Then ff=1;
+If 4<=AC31m<=7 Then ff=2;
+If AC31m>=8    Then ff=3;
+
+Age=.;
+If (18=<SRAGE_P<=34) Then Age=1;
+If (35=<SRAGE_P<=49) Then Age=2;
+If (50=<SRAGE_P<=64) Then Age=3;
+If (SRAGE_P>=65)     Then Age=4;
+
+Edu=.;
+If AHEDUC=1        Then Edu=4;
+If AHEDUC=2        Then Edu=4;
+If AHEDUC=91       Then Edu=4;
+If AHEDUC=3        Then Edu=3;
+If AHEDUC=4        Then Edu=2;
+If AHEDUC=5        Then Edu=2;
+If AHEDUC=6        Then Edu=2;
+If (7=<AHEDUC=<10) Then Edu=1;
+
+Marit3=.;
+If MARIT2=1 Then Marit3=1;
+If MARIT2=2 Then Marit3=1;
+If MARIT2=3 Then Marit3=2;
+If MARIT2=4 Then Marit3=3;
+
+fpl_c=.;
+If HHSIZE_P=1 and (AK22_P/10830)<=1   Then fpl_c=1;
+If HHSIZE_P=1 and 1<(AK22_P/10830)<=2 Then fpl_c=2;
+If HHSIZE_P=1 and 2<(AK22_P/10830)<=3 Then fpl_c=3;
+If HHSIZE_P=1 and (AK22_P/10830)>3    Then fpl_c=4;
+
+If HHSIZE_P=2 and (AK22_P/14570)<=1   Then fpl_c=1;
+If HHSIZE_P=2 and 1<(AK22_P/14570)<=2 Then fpl_c=2;
+If HHSIZE_P=2 and 2<(AK22_P/14570)<=3 Then fpl_c=3;
+If HHSIZE_P=2 and (AK22_P/14570)>3    Then fpl_c=4;
+
+If HHSIZE_P=3 and (AK22_P/18310)<=1   Then fpl_c=1;
+If HHSIZE_P=3 and 1<(AK22_P/18310)<=2 Then fpl_c=2;
+If HHSIZE_P=3 and 2<(AK22_P/18310)<=3 Then fpl_c=3;
+If HHSIZE_P=3 and (AK22_P/18310)>3    Then fpl_c=4;
+
+If HHSIZE_P=4 and (AK22_P/22050)<=1   Then fpl_c=1;
+If HHSIZE_P=4 and 1<(AK22_P/22050)<=2 Then fpl_c=2;
+If HHSIZE_P=4 and 2<(AK22_P/22050)<=3 Then fpl_c=3;
+If HHSIZE_P=4 and (AK22_P/22050)>3    Then fpl_c=4;
+
+If HHSIZE_P=5 and (AK22_P/25790)<=1   Then fpl_c=1;
+If HHSIZE_P=5 and 1<(AK22_P/25790)<=2 Then fpl_c=2;
+If HHSIZE_P=5 and 2<(AK22_P/25790)<=3 Then fpl_c=3;
+If HHSIZE_P=5 and (AK22_P/25790)>3    Then fpl_c=4;
+
+If HHSIZE_P=6 and (AK22_P/29530)<=1   Then fpl_c=1;
+If HHSIZE_P=6 and 1<(AK22_P/29530)<=2 Then fpl_c=2;
+If HHSIZE_P=6 and 2<(AK22_P/29530)<=3 Then fpl_c=3;
+If HHSIZE_P=6 and (AK22_P/29530)>3    Then fpl_c=4;
+
+If HHSIZE_P=7 and (AK22_P/33270)<=1   Then fpl_c=1;
+If HHSIZE_P=7 and 1<(AK22_P/33270)<=2 Then fpl_c=2;
+If HHSIZE_P=7 and 2<(AK22_P/33270)<=3 Then fpl_c=3;
+If HHSIZE_P=7 and (AK22_P/33270)>3    Then fpl_c=4;
+
+If HHSIZE_P=8 and (AK22_P/37010)<=1   Then fpl_c=1;
+If HHSIZE_P=8 and 1<(AK22_P/37010)<=2 Then fpl_c=2;
+If HHSIZE_P=8 and 2<(AK22_P/37010)<=3 Then fpl_c=3;
+If HHSIZE_P=8 and (AK22_P/37010)>3    Then fpl_c=4;
+
+If HHSIZE_P=9 and (AK22_P/40750)<=1   Then fpl_c=1;
+If HHSIZE_P=9 and 1<(AK22_P/40750)<=2 Then fpl_c=2;
+If HHSIZE_P=9 and 2<(AK22_P/40750)<=3 Then fpl_c=3;
+If HHSIZE_P=9 and (AK22_P/40750)>3    Then fpl_c=4;
+
+If HHSIZE_P=10 and (AK22_P/44490)<=1   Then fpl_c=1;
+If HHSIZE_P=10 and 1<(AK22_P/44490)<=2 Then fpl_c=2;
+If HHSIZE_P=10 and 2<(AK22_P/44490)<=3 Then fpl_c=3;
+If HHSIZE_P=10 and (AK22_P/44490)>3    Then fpl_c=4;
+
+Label  wlk  = 'Weekly times of walking'
+       mvpa = 'Weekly days of doing moderate and vigorous physical activities'
+       fp   = 'Monthly times consumption of fried potatoes'
+       ssb  = 'Monthly times consumption of sugar-sweetened beverages'
+       dst  = 'Monthly times consumption of desserts'
+       ff   = 'Monthly times consumption of fast food'
+       Age  = 'AGE'
+     Income = 'Household income'
+     Marit3 = 'Marital Status'
+        AB1 = 'Health Status'
+        Edu = 'Education'
+     SMKCUR = 'Smoking Status'
+        SRH = 'Self-reported Latino/hispanic'
+      fpl_c = 'Household income: Federal Poverty Level'
+   LANGHOME = 'Language Spoken At Home'
+   INTVLANG = 'Language used to complete the survey'
+       AH37 = 'Self-reported English proficiency'
+    AH33NEW = 'Nativity'
+       YRUS = 'Duration of US residence'
+   CITIZEN2 = 'Citizenship status';
+Run;
+
+/********************************
+           Make Codebook
+*********************************/
+Proc Freq Data=Folder.adult1;
+Tables WLK AGE fpl_c Marit3 Edu SMKCUR;
+Format WLK WLKFMT. AGE AGEFMT. fpl_c fpl_cfmt. Marit3 MARIT3F. Edu EduFMT. SMKCUR SMKCURfmt.;
+Run;
+Proc Freq Data=Folder.adult1;
+Tables WLK;
+Format WLK WLKFMT. ;
+Run;
+Proc Means Data=Folder.adult1 mean std median q1 q3 min max maxdec=1;
+Var wlk;
+Format wlk wlkfmt. ;
+Run;
+Proc Univariate Data=Folder.adult1;
+Var AD38W AD41W AE27 AE25 AE3 AC11 AC12 AC41 AC36 AC13 AC14 AC31 AK22_P HHSIZE_P SRAGE_P;
+Histogram;
+Run;
+
+
+
+/********************************
+           Make Tables
+*********************************/
+
+/*Table #1: Participant characteristics by Latina ethnicity*/
+Proc Sort Data=folder.adult1;
+By SRH;
+Run;
+Proc Surveyfreq Data=folder.adult1 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/JKCOEFS=1; 
+Tables SRH*AGE SRH*fpl_c SRH*Edu SRH*Marit3 SRH*AB1 SRH*SMKCUR 
+SRH*LANGHOME SRH*INTVLANG SRH*AH37 SRH*AH33NEW SRH*YRUS SRH*CITIZEN2 /Row;
+Format SRH SRHFMT. age agefmt. fpl_c fpl_cfmt. Edu Edufmt. Marit3 Marit3f. 
+AB1 AB1fmt. SMKCUR SMKCURfmt. Marit3 Marit3f. LANGHOME LANGHFMT. INTVLANG INTVLfmt. 
+AH37 AH37FMT. AH33NEW AH33fmt. YRUS YRUSFMT. CITIZEN2 CITIZfmt.  ;
+Run;
+
+/*Table #2: Diabetes-related behaviors by Latina ethnicity*/
+Proc Surveyfreq Data=folder.adult1 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/JKCOEFS=1; 
+Tables wlk mvpa fp ssb dst ff/Row;
+Format wlk wlkfmt. mvpa mvpafmt. fp fpfmt. ssb ssbfmt. dst dstfmt. ff fffmt.;
+Run;
+
+/*Table #3*/
+
+/*Table #4*/
+/*make binary diabetic-related outcome variables*/
+Data Folder.adult2;
+Set Folder.adult1;
+wlk_b=.;
+If wlk=1 Then wlk_b=1;
+If wlk=2 or wlk=3 Then wlk_b=0;
+mvpa_b=.;
+If mvpa=1 Then mvpa_b=1;
+If mvpa=2 or mvpa=3 Then mvpa_b=0;
+fp_b=.;
+If fp=3 Then fp_b=1;
+If fp=1 or fp=2 Then fp_b=0;
+ssb_b=.;
+If ssb=3 Then ssb_b=1;
+If ssb=1 or ssb=2 Then ssb_b=0;
+dst_b=.;
+If dst=3 Then dst_b=1;
+If dst=1 or dst=2 Then dst_b=0;
+ff_b=.;
+If ff=3 Then ff_b=1;
+If ff=1 or ff=2 Then ff_b=0;
+Run;
+/*Unadjusted model*/
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      wlk_b (Ref="0");
+Model wlk_b = SRH;
+Format SRH YESNO.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      mvpa_b (Ref="0");
+Model mvpa_b = SRH;
+Format SRH YESNO.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      fp_b (Ref="0");
+Model fp_b = SRH;
+Format SRH YESNO.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      ssb_b (Ref="0");
+Model ssb_b = SRH;
+Format SRH YESNO.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      dst_b (Ref="0");
+Model dst_b = SRH;
+Format SRH YESNO.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      ff_b (Ref="0");
+Model ff_b = SRH;
+Format SRH YESNO.;
+Run;
+/*Model 1: adjusted for age*/
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+      wlk_b (Ref="0");
+Model wlk_b = SRH age_c;
+Format SRH YESNO. age_c age_cfmt.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+      mvpa_b (Ref="0");
+Model mvpa_b = SRH age_c;
+Format SRH YESNO. age_c age_cfmt.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+      fp_b (Ref="0");
+Model fp_b = SRH age_c;
+Format SRH YESNO. age_c age_cfmt.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+      ssb_b (Ref="0");
+Model ssb_b = SRH age_c;
+Format SRH YESNO. age_c age_cfmt.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+      dst_b (Ref="0");
+Model dst_b = SRH age_c;
+Format SRH YESNO. age_c age_cfmt.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+      ff_b (Ref="0");
+Model ff_b = SRH age_c;
+Format SRH YESNO. age_c age_cfmt.;
+Run;
+/*Model 2: adjusted for age, household income, education, marital status*/
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+	  fpl_c (Ref=">300%")
+	  edu_c (Ref="High school")
+	  mar_c (Ref="Married")
+      wlk_b (Ref="0");
+Model wlk_b = SRH age_c fpl_c edu_c mar_c;
+Format SRH YESNO. age_c age_cfmt. fpl_c fpl_cfmt. edu_c edu_cfmt. mar_c mar_cfmt.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+	  fpl_c (Ref=">300%")
+	  edu_c (Ref="High school")
+	  mar_c (Ref="Married")
+      mvpa_b (Ref="0");
+Model mvpa_b = SRH age_c fpl_c edu_c mar_c;
+Format SRH YESNO. age_c age_cfmt. fpl_c fpl_cfmt. edu_c edu_cfmt. mar_c mar_cfmt.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+	  fpl_c (Ref=">300%")
+	  edu_c (Ref="High school")
+	  mar_c (Ref="Married")
+      fp_b (Ref="0");
+Model fp_b = SRH age_c fpl_c edu_c mar_c;
+Format SRH YESNO. age_c age_cfmt. fpl_c fpl_cfmt. edu_c edu_cfmt. mar_c mar_cfmt.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+	  fpl_c (Ref=">300%")
+	  edu_c (Ref="High school")
+	  mar_c (Ref="Married")
+      ssb_b (Ref="0");
+Model ssb_b = SRH age_c fpl_c edu_c mar_c;
+Format SRH YESNO. age_c age_cfmt. fpl_c fpl_cfmt. edu_c edu_cfmt. mar_c mar_cfmt.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+	  fpl_c (Ref=">300%")
+	  edu_c (Ref="High school")
+	  mar_c (Ref="Married")
+      dst_b (Ref="0");
+Model dst_b = SRH age_c fpl_c edu_c mar_c;
+Format SRH YESNO. age_c age_cfmt. fpl_c fpl_cfmt. edu_c edu_cfmt. mar_c mar_cfmt.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+	  fpl_c (Ref=">300%")
+	  edu_c (Ref="High school")
+	  mar_c (Ref="Married")
+      ff_b (Ref="0");
+Model ff_b = SRH age_c fpl_c edu_c mar_c;
+Format SRH YESNO. age_c age_cfmt. fpl_c fpl_cfmt. edu_c edu_cfmt. mar_c mar_cfmt.;
+Run;
+/*Model 3: adjusted for age, household income, education, marital status, health status, smoking status*/
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+	  fpl_c (Ref=">300%")
+	  edu_c (Ref="High school")
+	  mar_c (Ref="Married")
+	  AB1 (Ref="GOOD")
+	  SMKCUR (Ref="NOT CURRENT SMOKER")
+      wlk_b (Ref="0");
+Model wlk_b = SRH age_c fpl_c edu_c mar_c AB1 SMKCUR;
+Format SRH YESNO. age_c age_cfmt. fpl_c fpl_cfmt. edu_c edu_cfmt. mar_c mar_cfmt. AB1 AB1X. SMKCUR SMKCURF.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+	  fpl_c (Ref=">300%")
+	  edu_c (Ref="High school")
+	  mar_c (Ref="Married")
+	  AB1 (Ref="GOOD")
+	  SMKCUR (Ref="NOT CURRENT SMOKER")
+      mvpa_b (Ref="0");
+Model mvpa_b = SRH age_c fpl_c edu_c mar_c AB1 SMKCUR;
+Format SRH YESNO. age_c age_cfmt. fpl_c fpl_cfmt. edu_c edu_cfmt. mar_c mar_cfmt. AB1 AB1X. SMKCUR SMKCURF.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+	  fpl_c (Ref=">300%")
+	  edu_c (Ref="High school")
+	  mar_c (Ref="Married")
+	  AB1 (Ref="GOOD")
+	  SMKCUR (Ref="NOT CURRENT SMOKER")
+      fp_b (Ref="0");
+Model fp_b = SRH age_c fpl_c edu_c mar_c AB1 SMKCUR;
+Format SRH YESNO. age_c age_cfmt. fpl_c fpl_cfmt. edu_c edu_cfmt. mar_c mar_cfmt. AB1 AB1X. SMKCUR SMKCURF.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+	  fpl_c (Ref=">300%")
+	  edu_c (Ref="High school")
+	  mar_c (Ref="Married")
+	  AB1 (Ref="GOOD")
+	  SMKCUR (Ref="NOT CURRENT SMOKER")
+      ssb_b (Ref="0");
+Model ssb_b = SRH age_c fpl_c edu_c mar_c AB1 SMKCUR;
+Format SRH YESNO. age_c age_cfmt. fpl_c fpl_cfmt. edu_c edu_cfmt. mar_c mar_cfmt. AB1 AB1X. SMKCUR SMKCURF.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+	  fpl_c (Ref=">300%")
+	  edu_c (Ref="High school")
+	  mar_c (Ref="Married")
+	  AB1 (Ref="GOOD")
+	  SMKCUR (Ref="NOT CURRENT SMOKER")
+      dst_b (Ref="0");
+Model dst_b = SRH age_c fpl_c edu_c mar_c AB1 SMKCUR;
+Format SRH YESNO. age_c age_cfmt. fpl_c fpl_cfmt. edu_c edu_cfmt. mar_c mar_cfmt. AB1 AB1X. SMKCUR SMKCURF.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+	  fpl_c (Ref=">300%")
+	  edu_c (Ref="High school")
+	  mar_c (Ref="Married")
+	  AB1 (Ref="GOOD")
+	  SMKCUR (Ref="NOT CURRENT SMOKER")
+      ff_b (Ref="0");
+Model ff_b = SRH age_c fpl_c edu_c mar_c AB1 SMKCUR;
+Format SRH YESNO. age_c age_cfmt. fpl_c fpl_cfmt. edu_c edu_cfmt. mar_c mar_cfmt. AB1 AB1X. SMKCUR SMKCURF.;
+Run;
+/*Model 4: adjusted for age, household income, education, marital status, health status, smoking status, acculturation items*/
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+	  fpl_c (Ref=">300%")
+	  edu_c (Ref="High school")
+	  mar_c (Ref="Married")
+	  AB1 (Ref="GOOD")
+	  SMKCUR (Ref="NOT CURRENT SMOKER")
+	  lanh (Ref="English")
+	  lani (Ref="English")
+	  yr_c (Ref="Born in the US")
+	  SPK_ENG (Ref="SPEAK ONLY ENGLISH")
+      AH33NEW (Ref="BORN IN U.S.")
+      CITIZEN2 (Ref="US-BORN CITIZEN")
+      wlk_b (Ref="0");
+Model wlk_b = SRH age_c fpl_c edu_c mar_c AB1 SMKCUR lanh lani yr_c SPK_ENG AH33NEW CITIZEN2;
+Format SRH YESNO. age_c age_cfmt. fpl_c fpl_cfmt. edu_c edu_cfmt. mar_c mar_cfmt. AB1 AB1X. SMKCUR SMKCURF.
+       lanh lanhfmt. lani lanifmt. yr_c yr_cfmt. SPK_ENG SPK_ENGF. AH33NEW AH33NEWF. CITIZEN2 CITZN2F.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+	  fpl_c (Ref=">300%")
+	  edu_c (Ref="High school")
+	  mar_c (Ref="Married")
+	  AB1 (Ref="GOOD")
+	  SMKCUR (Ref="NOT CURRENT SMOKER")
+	  lanh (Ref="English")
+	  lani (Ref="English")
+	  yr_c (Ref="Born in the US")
+	  SPK_ENG (Ref="SPEAK ONLY ENGLISH")
+      AH33NEW (Ref="BORN IN U.S.")
+      CITIZEN2 (Ref="US-BORN CITIZEN")
+      mvpa_b (Ref="0");
+Model mvpa_b = SRH age_c fpl_c edu_c mar_c AB1 SMKCUR lanh lani yr_c SPK_ENG AH33NEW CITIZEN2;
+Format SRH YESNO. age_c age_cfmt. fpl_c fpl_cfmt. edu_c edu_cfmt. mar_c mar_cfmt. AB1 AB1X. SMKCUR SMKCURF.
+       lanh lanhfmt. lani lanifmt. yr_c yr_cfmt. SPK_ENG SPK_ENGF. AH33NEW AH33NEWF. CITIZEN2 CITZN2F.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+	  fpl_c (Ref=">300%")
+	  edu_c (Ref="High school")
+	  mar_c (Ref="Married")
+	  AB1 (Ref="GOOD")
+	  SMKCUR (Ref="NOT CURRENT SMOKER")
+	  lanh (Ref="English")
+	  lani (Ref="English")
+	  yr_c (Ref="Born in the US")
+	  SPK_ENG (Ref="SPEAK ONLY ENGLISH")
+      AH33NEW (Ref="BORN IN U.S.")
+      CITIZEN2 (Ref="US-BORN CITIZEN")
+      fp_b (Ref="0");
+Model fp_b = SRH age_c fpl_c edu_c mar_c AB1 SMKCUR lanh lani yr_c SPK_ENG AH33NEW CITIZEN2;
+Format SRH YESNO. age_c age_cfmt. fpl_c fpl_cfmt. edu_c edu_cfmt. mar_c mar_cfmt. AB1 AB1X. SMKCUR SMKCURF.
+       lanh lanhfmt. lani lanifmt. yr_c yr_cfmt. SPK_ENG SPK_ENGF. AH33NEW AH33NEWF. CITIZEN2 CITZN2F.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+	  fpl_c (Ref=">300%")
+	  edu_c (Ref="High school")
+	  mar_c (Ref="Married")
+	  AB1 (Ref="GOOD")
+	  SMKCUR (Ref="NOT CURRENT SMOKER")
+	  lanh (Ref="English")
+	  lani (Ref="English")
+	  yr_c (Ref="Born in the US")
+	  SPK_ENG (Ref="SPEAK ONLY ENGLISH")
+      AH33NEW (Ref="BORN IN U.S.")
+      CITIZEN2 (Ref="US-BORN CITIZEN")
+      ssb_b (Ref="0");
+Model ssb_b = SRH age_c fpl_c edu_c mar_c AB1 SMKCUR lanh lani yr_c SPK_ENG AH33NEW CITIZEN2;
+Format SRH YESNO. age_c age_cfmt. fpl_c fpl_cfmt. edu_c edu_cfmt. mar_c mar_cfmt. AB1 AB1X. SMKCUR SMKCURF.
+       lanh lanhfmt. lani lanifmt. yr_c yr_cfmt. SPK_ENG SPK_ENGF. AH33NEW AH33NEWF. CITIZEN2 CITZN2F.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+	  fpl_c (Ref=">300%")
+	  edu_c (Ref="High school")
+	  mar_c (Ref="Married")
+	  AB1 (Ref="GOOD")
+	  SMKCUR (Ref="NOT CURRENT SMOKER")
+	  lanh (Ref="English")
+	  lani (Ref="English")
+	  yr_c (Ref="Born in the US")
+	  SPK_ENG (Ref="SPEAK ONLY ENGLISH")
+      AH33NEW (Ref="BORN IN U.S.")
+      CITIZEN2 (Ref="US-BORN CITIZEN")
+      dst_b (Ref="0");
+Model dst_b = SRH age_c fpl_c edu_c mar_c AB1 SMKCUR lanh lani yr_c SPK_ENG AH33NEW CITIZEN2;
+Format SRH YESNO. age_c age_cfmt. fpl_c fpl_cfmt. edu_c edu_cfmt. mar_c mar_cfmt. AB1 AB1X. SMKCUR SMKCURF.
+       lanh lanhfmt. lani lanifmt. yr_c yr_cfmt. SPK_ENG SPK_ENGF. AH33NEW AH33NEWF. CITIZEN2 CITZN2F.;
+Run;
+Proc Surveylogistic Data=cw.adult2 Varmethod=Jackknife;
+Weight rakedw0;
+Repweight rakedw1-rakedw80/Jkcoefs=1;
+Class SRH (Ref="NO")
+      age_c (Ref="18–34 years")
+	  fpl_c (Ref=">300%")
+	  edu_c (Ref="High school")
+	  mar_c (Ref="Married")
+	  AB1 (Ref="GOOD")
+	  SMKCUR (Ref="NOT CURRENT SMOKER")
+	  lanh (Ref="English")
+	  lani (Ref="English")
+	  yr_c (Ref="Born in the US")
+	  SPK_ENG (Ref="SPEAK ONLY ENGLISH")
+      AH33NEW (Ref="BORN IN U.S.")
+      CITIZEN2 (Ref="US-BORN CITIZEN")
+      ff_b (Ref="0");
+Model ff_b = SRH age_c fpl_c edu_c mar_c AB1 SMKCUR lanh lani yr_c SPK_ENG AH33NEW CITIZEN2;
+Format SRH YESNO. age_c age_cfmt. fpl_c fpl_cfmt. edu_c edu_cfmt. mar_c mar_cfmt. AB1 AB1X. SMKCUR SMKCURF.
+       lanh lanhfmt. lani lanifmt. yr_c yr_cfmt. SPK_ENG SPK_ENGF. AH33NEW AH33NEWF. CITIZEN2 CITZN2F.;
+Run;
